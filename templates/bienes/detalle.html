@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block titulo %}{{ bien.codigo_patrimonial }}{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h4 class="mb-0">{{ bien.codigo_patrimonial }} — {{ bien.denominacion }}</h4>
+    <span class="badge badge-estado-{{ bien.situacion }}">{{ bien.get_situacion_display }}</span>
+    <span class="text-muted ms-2">{{ bien.categoria }} · {{ bien.unidad_organica }}</span>
+  </div>
+  <div>
+    {% if user.es_administrador or user.es_control_patrimonial %}
+    <a href="{% url 'bienes:editar' bien.pk %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+    <a href="{% url 'asignaciones:crear' bien.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-person-check"></i> Asignar</a>
+    <a href="{% url 'conservacion:crear' bien.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-clipboard-heart"></i> Estado conservación</a>
+    {% if bien.situacion == "ACTIVO" %}
+    <a href="{% url 'bajas:crear' bien.pk %}" class="btn btn-outline-danger btn-sm"><i class="bi bi-dash-circle"></i> Dar de baja</a>
+    {% endif %}
+    {% endif %}
+    <a href="{% url 'desplazamientos:crear' bien.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-truck"></i> Solicitar desplazamiento</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="card"><div class="card-body"><small class="text-muted">Marca / Modelo</small><div>{{ bien.marca|default:"—" }} / {{ bien.modelo|default:"—" }}</div></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><small class="text-muted">Serie</small><div>{{ bien.serie|default:"—" }}</div></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><small class="text-muted">Valor de adquisición</small><div>S/ {{ bien.valor_adquisicion }}</div></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body"><small class="text-muted">Responsable actual</small><div>{{ bien.responsable_actual|default:"Sin asignar" }}</div></div></div></div>
+</div>
+
+<ul class="nav nav-tabs" id="tabsBien" role="tablist">
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-documentos" type="button">Documentos</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-asignaciones" type="button">Asignaciones</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-desplazamientos" type="button">Desplazamientos</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-conservacion" type="button">Conservación</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-historial" type="button">Historial de cambios</button></li>
+</ul>
+<div class="tab-content card border-top-0 p-3">
+  <div class="tab-pane fade show active" id="tab-documentos">
+    <form method="post" enctype="multipart/form-data" action="{% url 'bienes:subir_documento' bien.pk %}" class="row g-2 mb-3">
+      {% csrf_token %}
+      <div class="col-auto">{{ form_documento.tipo_documento }}</div>
+      <div class="col-auto">{{ form_documento.archivo }}</div>
+      <div class="col-auto">{{ form_documento.descripcion }}</div>
+      <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">Adjuntar</button></div>
+    </form>
+    <ul class="list-group">
+      {% for doc in documentos %}
+      <li class="list-group-item d-flex justify-content-between">
+        <span>{{ doc.get_tipo_documento_display }} — {{ doc.descripcion|default:doc.archivo.name }}</span>
+        <a href="{{ doc.archivo.url }}" target="_blank">Descargar</a>
+      </li>
+      {% empty %}<li class="list-group-item text-muted">Sin documentos adjuntos.</li>{% endfor %}
+    </ul>
+  </div>
+  <div class="tab-pane fade" id="tab-asignaciones">
+    <table class="table table-sm">
+      <thead><tr><th>Acta</th><th>Responsable</th><th>Desde</th><th>Hasta</th><th>Vigente</th></tr></thead>
+      <tbody>
+        {% for a in asignaciones %}
+        <tr><td>{{ a.numero_acta }}</td><td>{{ a.responsable }}</td><td>{{ a.fecha_asignacion }}</td><td>{{ a.fecha_fin|default:"—" }}</td>
+          <td>{% if a.activa %}<span class="badge bg-success">Sí</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</td></tr>
+        {% empty %}<tr><td colspan="5" class="text-muted">Sin asignaciones registradas.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="tab-pane fade" id="tab-desplazamientos">
+    <table class="table table-sm">
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Origen</th><th>Destino</th><th>Estado</th></tr></thead>
+      <tbody>
+        {% for d in desplazamientos %}
+        <tr><td>{{ d.fecha_solicitud|date:"d/m/Y H:i" }}</td><td>{{ d.get_tipo_display }}</td><td>{{ d.origen }}</td><td>{{ d.destino }}</td>
+          <td><span class="badge badge-estado-{{ d.estado }}">{{ d.get_estado_display }}</span></td></tr>
+        {% empty %}<tr><td colspan="5" class="text-muted">Sin desplazamientos registrados.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="tab-pane fade" id="tab-conservacion">
+    <table class="table table-sm">
+      <thead><tr><th>Fecha</th><th>Estado</th><th>Observaciones</th><th>Evidencia</th></tr></thead>
+      <tbody>
+        {% for c in conservacion %}
+        <tr><td>{{ c.fecha_registro|date:"d/m/Y" }}</td><td>{{ c.get_estado_display }}</td><td>{{ c.observaciones }}</td>
+          <td>{% if c.evidencia_foto %}<a href="{{ c.evidencia_foto.url }}" target="_blank">Ver foto</a>{% else %}—{% endif %}</td></tr>
+        {% empty %}<tr><td colspan="4" class="text-muted">Sin registros de conservación.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="tab-pane fade" id="tab-historial">
+    <table class="table table-sm">
+      <thead><tr><th>Fecha</th><th>Campo</th><th>Anterior</th><th>Nuevo</th><th>Usuario</th></tr></thead>
+      <tbody>
+        {% for h in historial %}
+        <tr><td>{{ h.fecha|date:"d/m/Y H:i" }}</td><td>{{ h.campo_modificado }}</td><td>{{ h.valor_anterior }}</td><td>{{ h.valor_nuevo }}</td><td>{{ h.usuario }}</td></tr>
+        {% empty %}<tr><td colspan="5" class="text-muted">Sin cambios registrados.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

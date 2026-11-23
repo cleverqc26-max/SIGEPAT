@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}Inventario físico{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0"><i class="bi bi-clipboard-check"></i> Inventario físico</h4>
+  {% if user.es_administrador or user.es_control_patrimonial %}
+  <a href="{% url 'inventario:crear' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Abrir inventario</a>
+  {% endif %}
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light"><tr><th>Año</th><th>Unidad orgánica</th><th>Estado</th><th>Inicio</th><th>Cierre</th><th>Avance</th></tr></thead>
+      <tbody>
+      {% for inv in inventarios %}
+        <tr>
+          <td><a href="{% url 'inventario:detalle' inv.pk %}">{{ inv.anio }}</a></td>
+          <td>{{ inv.unidad_organica }}</td>
+          <td><span class="badge {% if inv.estado == 'CERRADO' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">{{ inv.get_estado_display }}</span></td>
+          <td>{{ inv.fecha_inicio }}</td>
+          <td>{{ inv.fecha_cierre|default:"—" }}</td>
+          <td>{{ inv.total_verificado }} / {{ inv.total_esperado }}</td>
+        </tr>
+      {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Sin inventarios registrados.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "paginacion.html" %}
+{% endblock %}

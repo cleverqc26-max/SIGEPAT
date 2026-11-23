@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block titulo %}Dashboard{% endblock %}
+{% block contenido %}
+<h4 class="mb-3"><i class="bi bi-speedometer2"></i> Panel general del patrimonio</h4>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card"><div class="card-body text-center">
+    <h2>{{ total_bienes }}</h2><small class="text-muted">Total de bienes registrados</small>
+  </div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body text-center">
+    <h2 class="text-success">{{ total_activos }}</h2><small class="text-muted">Bienes activos</small>
+  </div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body text-center">
+    <h2 class="text-secondary">{{ total_baja }}</h2><small class="text-muted">Bienes dados de baja</small>
+  </div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body text-center">
+    <h2 class="text-warning">{{ pendientes_verificacion }}</h2><small class="text-muted">Pendientes de verificación (inventarios abiertos)</small>
+  </div></div></div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h6>Bienes por estado de conservación</h6>
+      <canvas id="graficoEstados" height="220"></canvas>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h6>Bienes por unidad orgánica (top 10)</h6>
+      <canvas id="graficoUnidades" height="220"></canvas>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h6>Inventarios físicos en proceso</h6>
+      <ul class="list-group list-group-flush">
+        {% for inv in inventarios_abiertos %}
+        <li class="list-group-item d-flex justify-content-between">
+          <a href="{% url 'inventario:detalle' inv.pk %}">{{ inv }}</a>
+          <span>{{ inv.total_verificado }} / {{ inv.total_esperado }}</span>
+        </li>
+        {% empty %}<li class="list-group-item text-muted">No hay inventarios en proceso.</li>{% endfor %}
+      </ul>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card"><div class="card-body text-center">
+      <h2 class="text-danger">{{ desplazamientos_pendientes }}</h2>
+      <small class="text-muted">Desplazamientos pendientes de autorización</small>
+      <div><a href="{% url 'desplazamientos:lista' %}" class="btn btn-sm btn-outline-primary mt-2">Ver desplazamientos</a></div>
+    </div></div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  new Chart(document.getElementById('graficoEstados'), {
+    type: 'doughnut',
+    data: {
+      labels: {{ datos_estado_labels|safe }},
+      datasets: [{ data: {{ datos_estado_valores|safe }}, backgroundColor: ['#0d6efd','#198754','#ffc107','#fd7e14','#dc3545','#6c757d'] }]
+    },
+  });
+  new Chart(document.getElementById('graficoUnidades'), {
+    type: 'bar',
+    data: {
+      labels: {{ datos_unidad_labels|safe }},
+      datasets: [{ label: 'Bienes', data: {{ datos_unidad_valores|safe }}, backgroundColor: '#1F4E5F' }]
+    },
+    options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titulo %}Reportes{% endblock %}
+{% block contenido %}
+<h4 class="mb-3"><i class="bi bi-file-earmark-bar-graph"></i> Reportes</h4>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <h6>Reporte general de bienes (RF29) — exportable a PDF y Excel (RF30)</h6>
+    <form method="get" class="row g-2 mb-3">
+      <div class="col-auto">{{ form.unidad_organica }}</div>
+      <div class="col-auto">{{ form.situacion }}</div>
+      <div class="col-auto">{{ form.responsable }}</div>
+      <div class="col-auto">{{ form.estado_conservacion }}</div>
+      <div class="col-auto"><button class="btn btn-outline-secondary" type="submit">Filtrar</button></div>
+      <div class="col-auto"><a class="btn btn-success" href="{% url 'reportes:bienes_excel' %}?{{ request.GET.urlencode }}"><i class="bi bi-file-earmark-excel"></i> Excel</a></div>
+      <div class="col-auto"><a class="btn btn-danger" href="{% url 'reportes:bienes_pdf' %}?{{ request.GET.urlencode }}"><i class="bi bi-file-earmark-pdf"></i> PDF</a></div>
+    </form>
+    <p class="text-muted">Coincidencias: {{ total_filtrado }} (se muestra una vista previa de los primeros 50)</p>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead><tr><th>Código</th><th>Denominación</th><th>Unidad orgánica</th><th>Situación</th></tr></thead>
+        <tbody>
+        {% for b in bienes %}
+          <tr><td>{{ b.codigo_patrimonial }}</td><td>{{ b.denominacion }}</td><td>{{ b.unidad_organica }}</td><td>{{ b.get_situacion_display }}</td></tr>
+        {% empty %}<tr><td colspan="4" class="text-muted">Sin resultados.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h6>Acta de inventario físico (RF28 — formato Directiva N.° 0006-2021-EF/54.01)</h6>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead><tr><th>Año</th><th>Unidad orgánica</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+        {% for inv in inventarios %}
+          <tr>
+            <td>{{ inv.anio }}</td><td>{{ inv.unidad_organica }}</td><td>{{ inv.get_estado_display }}</td>
+            <td><a class="btn btn-sm btn-outline-danger" href="{% url 'reportes:inventario_pdf' inv.pk %}"><i class="bi bi-file-earmark-pdf"></i> Descargar acta</a></td>
+          </tr>
+        {% empty %}<tr><td colspan="4" class="text-muted">Sin inventarios registrados.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

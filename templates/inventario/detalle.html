@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block titulo %}Inventario {{ inventario.anio }}{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h4 class="mb-0">Inventario {{ inventario.anio }} — {{ inventario.unidad_organica }}</h4>
+    <span class="badge {% if inventario.estado == 'CERRADO' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">{{ inventario.get_estado_display }}</span>
+  </div>
+  {% if inventario.estado == "EN_PROCESO" %}
+    {% if user.es_administrador or user.es_control_patrimonial %}
+    <form method="post" action="{% url 'inventario:cerrar' inventario.pk %}" onsubmit="return confirm('¿Cerrar el inventario? Se marcarán como FALTANTES los bienes esperados no verificados.');">
+      {% csrf_token %}
+      <input type="hidden" name="observaciones_cierre" value="Cierre generado desde el sistema SIGEPAT.">
+      <button class="btn btn-danger"><i class="bi bi-lock"></i> Cerrar inventario y generar acta</button>
+    </form>
+    {% endif %}
+  {% endif %}
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card"><div class="card-body text-center"><h3>{{ inventario.total_esperado }}</h3><small class="text-muted">Bienes esperados</small></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body text-center"><h3 class="text-success">{{ inventario.total_verificado }}</h3><small class="text-muted">Verificados</small></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body text-center"><h3 class="text-warning">{{ inventario.total_sobrantes }}</h3><small class="text-muted">Sobrantes</small></div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body text-center"><h3 class="text-danger">{{ inventario.total_faltantes }}</h3><small class="text-muted">Faltantes</small></div></div></div>
+</div>
+
+{% if inventario.estado == "CERRADO" %}
+<div class="card mb-4"><div class="card-body">
+  <h6>Conciliación con contabilidad (RF24)</h6>
+  {% if inventario.conciliado_contabilidad %}
+    <p class="mb-0">
+      <span class="badge bg-success">Conciliado</span>
+      por {{ inventario.conciliado_por }} el {{ inventario.fecha_conciliacion|date:"d/m/Y H:i" }}.
+      {% if inventario.observaciones_conciliacion %}<br><span class="text-muted">{{ inventario.observaciones_conciliacion }}</span>{% endif %}
+    </p>
+  {% elif user.es_administrador or user.es_contabilidad %}
+    <form method="post" action="{% url 'inventario:conciliar' inventario.pk %}" class="row g-2">
+      {% csrf_token %}
+      <div class="col-md-8">{{ form_conciliacion.observaciones_conciliacion }}</div>
+      <div class="col-md-4"><button class="btn btn-sm btn-primary mt-md-0 mt-2" type="submit">Registrar conciliación</button></div>
+    </form>
+  {% else %}
+    <p class="text-muted mb-0">Pendiente de conciliar con contabilidad.</p>
+  {% endif %}
+</div></div>
+{% endif %}
+
+{% if inventario.estado == "EN_PROCESO" %}
+<div class="card mb-4"><div class="card-body">
+  <h6>Registrar verificación (RF21) — usable también desde un dispositivo móvil</h6>
+  <form method="post" action="{% url 'inventario:verificar' inventario.pk %}" class="row g-2">
+    {% csrf_token %}
+    <div class="col-md-3">{{ form_verificacion.bien }}</div>
+    <div class="col-md-2">{{ form_verificacion.resultado }}</div>
+    <div class="col-md-3">{{ form_verificacion.descripcion_hallazgo }}</div>
+    <div class="col-md-2">{{ form_verificacion.ubicacion_encontrada }}</div>
+    <div class="col-md-2">{{ form_verificacion.estado_conservacion_encontrado }}</div>
+    <div class="col-12"><button class="btn btn-sm btn-primary mt-2" type="submit">Registrar</button></div>
+  </form>
+</div></div>
+{% endif %}
+
+<div class="row">
+  <div class="col-md-6">
+    <h6>Bienes pendientes de verificar ({{ bienes_pendientes.count }})</h6>
+    <ul class="list-group mb-4">
+      {% for b in bienes_pendientes %}<li class="list-group-item">{{ b.codigo_patrimonial }} — {{ b.denominacion }}</li>
+      {% empty %}<li class="list-group-item text-muted">Todos los bienes esperados fueron verificados.</li>{% endfor %}
+    </ul>
+  </div>
+  <div class="col-md-6">
+    <h6>Verificaciones registradas</h6>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead><tr><th>Bien</th><th>Resultado</th><th>Fecha</th></tr></thead>
+        <tbody>
+        {% for v in verificaciones %}
+          <tr><td>{{ v.bien.codigo_patrimonial|default:v.descripcion_hallazgo }}</td><td>{{ v.get_resultado_display }}</td><td>{{ v.fecha_verificacion|date:"d/m/Y H:i" }}</td></tr>
+        {% empty %}<tr><td colspan="3" class="text-muted">Sin verificaciones aún.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

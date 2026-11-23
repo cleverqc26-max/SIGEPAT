@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block titulo %}Formulario de bien{% endblock %}
+{% block contenido %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body p-4">
+        <h5 class="mb-3">
+          {% if form.instance.pk and form.instance.codigo_patrimonial %}
+            {% if "archivo" in form.fields %}Adjuntar documento a {{ bien }}{% else %}Editar bien {{ form.instance.codigo_patrimonial }}{% endif %}
+          {% else %}Registrar alta de bien patrimonial{% endif %}
+        </h5>
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <div class="row">
+          {% for field in form %}
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+              {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+          {% endfor %}
+          </div>
+          {% if form_documento %}
+          <hr>
+          <h6 class="mb-3">Documento de respaldo (obligatorio, HU-03)</h6>
+          <div class="row">
+          {% for field in form_documento %}
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+              {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+          {% endfor %}
+          </div>
+          {% endif %}
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <a href="{% url 'bienes:lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

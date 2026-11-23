@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titulo %}Bienes patrimoniales{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0"><i class="bi bi-box-seam"></i> Bienes patrimoniales</h4>
+  {% if user.es_administrador or user.es_control_patrimonial %}
+  <a href="{% url 'bienes:crear' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Registrar bien (alta)</a>
+  {% endif %}
+</div>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-auto"><input type="text" name="q" class="form-control" placeholder="Código, denominación o serie" value="{{ request.GET.q|default:'' }}"></div>
+  <div class="col-auto"><input type="text" name="unidad_organica" class="form-control" placeholder="Unidad orgánica" value="{{ request.GET.unidad_organica|default:'' }}"></div>
+  <div class="col-auto">
+    <select name="situacion" class="form-select">
+      <option value="">Todas las situaciones</option>
+      <option value="ACTIVO" {% if request.GET.situacion == "ACTIVO" %}selected{% endif %}>Activo</option>
+      <option value="BAJA" {% if request.GET.situacion == "BAJA" %}selected{% endif %}>Dado de baja</option>
+    </select>
+  </div>
+  <div class="col-auto"><button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i> Buscar</button></div>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr><th>Código</th><th>Denominación</th><th>Categoría</th><th>Unidad orgánica</th><th>Responsable</th><th>Conservación</th><th>Situación</th></tr>
+      </thead>
+      <tbody>
+        {% for bien in bienes %}
+        <tr>
+          <td><a href="{% url 'bienes:detalle' bien.pk %}">{{ bien.codigo_patrimonial }}</a></td>
+          <td>{{ bien.denominacion }}</td>
+          <td>{{ bien.categoria }}</td>
+          <td>{{ bien.unidad_organica }}</td>
+          <td>{{ bien.responsable_actual|default:"Sin asignar" }}</td>
+          <td>{{ bien.estado_conservacion_actual }}</td>
+          <td><span class="badge badge-estado-{{ bien.situacion }}">{{ bien.get_situacion_display }}</span></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No se encontraron bienes con los filtros aplicados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "paginacion.html" %}
+{% endblock %}

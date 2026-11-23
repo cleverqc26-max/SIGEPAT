@@ -1,0 +1,59 @@
+SIGEPAT — Sistema de Gestión de Patrimonio
+Paquete final del sistema (código + base de datos + archivos media de prueba)
+================================================================================
+
+CONTENIDO DEL PAQUETE
+----------------------
+- Código fuente completo del proyecto Django (apps, templates, static, config).
+- database_dump/sigepat_bd_dump.sql  → volcado completo de la base de datos MySQL/MariaDB
+  (esquema + datos de prueba usados durante la verificación: usuarios, bienes,
+  asignaciones, desplazamientos, verificaciones de inventario, etc.).
+- media/ → los ~1229 archivos subidos durante las pruebas (documentos de respaldo
+  de bienes, sustentos de baja, etc.) referenciados por los registros de la base de datos.
+- .env.example → plantilla de variables de entorno (NO incluye el .env real; hay que
+  crear uno propio).
+
+REQUISITOS
+----------
+- Python 3.11+
+- MySQL o MariaDB (XAMPP funciona bien en Windows)
+- pip
+
+PASOS PARA LEVANTAR EL SISTEMA
+-------------------------------
+1. Crear un entorno virtual e instalar dependencias:
+     python -m venv venv
+     source venv/bin/activate          (En Windows: venv\Scripts\activate)
+     pip install -r requirements.txt
+
+2. Crear la base de datos vacía en MySQL/MariaDB:
+     mysql -u root -e "CREATE DATABASE sigepat_bd CHARACTER SET utf8mb4;"
+
+3. Importar el volcado (esto ya crea las tablas Y carga los datos de prueba,
+   así que NO es necesario correr "migrate" después de importar):
+     mysql -u root sigepat_bd < database_dump/sigepat_bd_dump.sql
+
+4. Configurar las variables de entorno:
+     cp .env.example .env
+     # Editar .env con tus credenciales reales de MySQL (usuario, password, host, puerto)
+     # y generar una DJANGO_SECRET_KEY propia para producción.
+
+5. Verificar que la carpeta media/ (con los documentos de prueba) esté en la raíz
+   del proyecto, junto a manage.py. Ya viene incluida en este paquete.
+
+6. Ejecutar el servidor:
+     python manage.py runserver
+
+   El sistema queda disponible en http://127.0.0.1:8000/
+
+USUARIOS DE PRUEBA (según los datos del volcado)
+--------------------------------------------------
+Los usuarios y perfiles exactos están en la tabla "cuentas_usuario" del volcado;
+revisar ahí las cuentas disponibles (por ejemplo, perfiles ADMINISTRADOR y
+RESPONSABLE usados durante la verificación de requisitos funcionales).
+
+NOTA SOBRE RECURSOS EXTERNOS (CDN)
+------------------------------------
+El sistema carga Bootstrap, Bootstrap Icons y Chart.js desde CDN (jsdelivr).
+Si el entorno de despliegue no tiene salida a internet, estas librerías deben
+servirse localmente (ver recomendaciones del Capítulo V de la tesis).

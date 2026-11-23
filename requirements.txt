@@ -1,0 +1,8 @@
+Django>=4.2,<5
+# Nota: se usa la serie 4.2 LTS en vez de 5.x porque Django 5 exige MariaDB 10.5+
+# y XAMPP suele traer MariaDB 10.4.x. Verificado (migrate + seed_data + pruebas
+# funcionales) contra MariaDB 10.4 y 10.11 sin cambios de código.
+PyMySQL==1.2.3
+Faker==40.39.0
+openpyxl==3.1.5
+reportlab==4.4.10

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block titulo %}Bajas y saneamiento{% endblock %}
+{% block contenido %}
+<h4 class="mb-3"><i class="bi bi-dash-circle"></i> Bajas y saneamiento administrativo</h4>
+
+<div class="card mb-4">
+  <div class="card-header">Sobrantes / faltantes pendientes de iniciar saneamiento (RF27)</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead class="table-light"><tr><th>Inventario</th><th>Bien / hallazgo</th><th>Tipo</th><th>Fecha</th>{% if user.es_administrador or user.es_control_patrimonial %}<th></th>{% endif %}</tr></thead>
+      <tbody>
+      {% for v in pendientes_saneamiento %}
+        <tr>
+          <td>{{ v.inventario }}</td>
+          <td>{{ v.bien.codigo_patrimonial|default:v.descripcion_hallazgo }}</td>
+          <td>{{ v.get_resultado_display }}</td>
+          <td>{{ v.fecha_verificacion|date:"d/m/Y" }}</td>
+          {% if user.es_administrador or user.es_control_patrimonial %}
+          <td>
+            <form method="post" action="{% url 'bajas:iniciar_saneamiento' v.pk %}">
+              {% csrf_token %}<button class="btn btn-sm btn-outline-primary">Iniciar saneamiento</button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+      {% empty %}<tr><td colspan="5" class="text-muted text-center py-3">No hay pendientes.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">Trámites de saneamiento</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead class="table-light"><tr><th>Bien / hallazgo</th><th>Tipo</th><th>Estado</th><th>Plazo (días)</th><th>Inicio</th><th></th></tr></thead>
+      <tbody>
+      {% for s in saneamientos %}
+        <tr>
+          <td>{{ s.verificacion.bien.codigo_patrimonial|default:s.verificacion.descripcion_hallazgo }}</td>
+          <td>{{ s.get_tipo_display }}</td>
+          <td>{{ s.get_estado_tramite_display }}</td>
+          <td>{{ s.plazo_normativo_dias }}</td>
+          <td>{{ s.fecha_inicio_tramite }}</td>
+          <td><a class="btn btn-sm btn-outline-secondary" href="{% url 'bajas:actualizar_saneamiento' s.pk %}">Actualizar</a></td>
+        </tr>
+      {% empty %}<tr><td colspan="6" class="text-muted text-center py-3">Sin trámites registrados.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">Bienes dados de baja</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead class="table-light"><tr><th>Bien</th><th>Causal</th><th>Fecha</th><th>Disposición final</th>{% if user.es_administrador or user.es_control_patrimonial %}<th></th>{% endif %}</tr></thead>
+      <tbody>
+      {% for b in bajas %}
+        <tr>
+          <td>{{ b.bien.codigo_patrimonial }}</td><td>{{ b.causal }}</td><td>{{ b.fecha_baja }}</td><td>{{ b.get_disposicion_final_display }}</td>
+          {% if user.es_administrador or user.es_control_patrimonial %}
+          <td><a class="btn btn-sm btn-outline-secondary" href="{% url 'bajas:actualizar_disposicion' b.pk %}">Actualizar disposición</a></td>
+          {% endif %}
+        </tr>
+      {% empty %}<tr><td colspan="5" class="text-muted text-center py-3">Sin bajas registradas.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
